@@ -45,7 +45,7 @@ jobs:
 
     - stage: STG TEST
       script:
-        - curl https://devopslab-gaby.herokuapp.com/ | grep Hello || travis_terminate 1;
+        - curl https://devopslab-alexmart001.herokuapp.com/ | grep Hello || travis_terminate 1;
 
     - stage: PROD Deploy
       script: skip
