@@ -11,25 +11,53 @@ install:
 
 # Defini o script de Teste que deve rodar toda vez que o código for alterado.
 script:
-  - python -m unittest -v test || travis_terminate 1;  
+  - python -m unittest -v test || travis_terminate 1;
 
 before_install:
   - openssl aes-256-cbc -K $encrypted_86f8900ca297_key -iv $encrypted_86f8900ca297_iv
     -in lab-devops-cloud-amartins-3af04f3a6531.json.enc -out ../lab-devops-cloud-amartins-3af04f3a6531.json
     -d
 
-# Definir o Deploy no Heroku
-deploy:
-  - provider: heroku
-    api_key: $HEROKU_API_KEY
-    edge: true 
-    app: devopslab-alexmart001 
-    on:
-      branch: main
+jobs:
+  include:
+    - stage: Build
 
-# Definir o Deploy no Google Engine       
-  - provider: gae
-    keyfile: ../lab-devops-cloud-amartins-3af04f3a6531.json
-    project: lab-devops-cloud-amartins 
-    on:
-      branch: main    
+      name: "Testes Unitarios"
+      # Instalação de Módulos que são necessários para a Aplicação.
+      install:
+        - pip install flask flask-wtf coverage
+      script:  # Defini o script de Teste que deve rodar toda vez que o código for alterado.
+        - coverage run test.py || travis_terminate 1;
+        - coverage report app.py || travis_terminate 1;
+        - coverage xml app.py || travis_terminate 1;
+
+    - stage: STG Deploy
+      script: skip
+      # Definir o Deploy no Heroku
+      deploy:
+        provider: heroku
+        strategy: api
+        api_key: $HEROKU_API_KEY
+        edge: true
+        app: devopslab-alexmart001
+        on:
+          branch: main
+
+    - stage: STG TEST
+      script:
+        - curl https://devopslab-gaby.herokuapp.com/ | grep Hello || travis_terminate 1;
+
+    - stage: PROD Deploy
+      script: skip
+      # Definir o Deploy no Google Cloud
+      deploy:
+        provider: gae
+        keyfile: ../lab-devops-cloud-amartins-3af04f3a6531.json
+        project: lab-devops-cloud-amartins
+        on:
+          branch: main
+
+    - stage: PROD TEST
+      script:
+        - curl https://lab-devops-cloud-amartins.uc.r.appspot.com/ | grep Hello || travis_terminate 1;
+
